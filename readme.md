@@ -19,7 +19,6 @@ A fun project that leverages multi-platform audio to produce a grouchy version o
 1. Clone the repository:
     ```sh
     git clone https://github.com/FusionGuy/GrouchySpouse.git
-    cd DarkPersonaChat
     ```
 
 2. Create a [system_prompt.txt](http://_vscodecontentref_/0) file in the project directory with the desired system prompt content.
