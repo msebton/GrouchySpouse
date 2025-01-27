@@ -7,6 +7,7 @@ using NAudio.Wave;
 using System.IO;
 using System.Net.Http.Json;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 
 namespace GrouchySpouse
@@ -34,11 +35,11 @@ namespace GrouchySpouse
             // DeepSeek or other "Open" AI API
             _openAIClient.BaseAddress = new Uri("https://api.deepseek.com/");
             _openAIClient.DefaultRequestHeaders.Authorization = 
-                new AuthenticationHeaderValue("Bearer", "sk-XXXXX");
+                new AuthenticationHeaderValue("Bearer", "sk-XXXXXX");
             
             // Replicate API
             _replicateClient.DefaultRequestHeaders.Authorization = 
-                new AuthenticationHeaderValue("Bearer", "sk_XXXXXX");
+               new AuthenticationHeaderValue("Bearer", "r8_XXXXXX");
         }
 
         /// <summary>
@@ -67,9 +68,9 @@ namespace GrouchySpouse
                     Console.WriteLine("If you want her to talk, you have to give me something to say!");
                 }
 
-                var response = await _openAIClient.PostAsJsonAsync("v1/chat/completions", new
+                var response = await _openAIClient.PostAsJsonAsync("chat/completions", new
                 {
-                    model = "deepseek-reasoner",
+                    model = "deepseek-chat",
                     messages = history,
                     stream = false
                 });
@@ -99,6 +100,9 @@ namespace GrouchySpouse
             if (outputUrl != null)
             {
                 var tempFile = Path.GetTempFileName();
+
+
+                Console.WriteLine("\nWriting {0} to {1}", outputUrl, tempFile);
                 await DownloadAudioFile(outputUrl, tempFile);
                 await PlayAudioAsync(tempFile);
                 File.Delete(tempFile);  // Clean up the temp file after playing
