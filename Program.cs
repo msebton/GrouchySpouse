@@ -33,13 +33,18 @@ namespace GrouchySpouse
         static void InitializeClients()
         {
             // DeepSeek or other "Open" AI API
-            _openAIClient.BaseAddress = new Uri("https://api.deepseek.com/");
+            //_openAIClient.BaseAddress = new Uri("https://api.deepseek.com/");
+
+            _openAIClient.BaseAddress = new Uri("https://api.groq.com/openai/v1/");
+            //_openAIClient.DefaultRequestHeaders.Authorization = 
+            //    new AuthenticationHeaderValue("Bearer", "sk-XXXX");
+
             _openAIClient.DefaultRequestHeaders.Authorization = 
-                new AuthenticationHeaderValue("Bearer", "sk-XXXXXX");
+                new AuthenticationHeaderValue("Bearer", "gsk_XXXX");
             
             // Replicate API
             _replicateClient.DefaultRequestHeaders.Authorization = 
-               new AuthenticationHeaderValue("Bearer", "r8_XXXXXX");
+               new AuthenticationHeaderValue("Bearer", "r8_XXXX");
         }
 
         /// <summary>
@@ -68,9 +73,17 @@ namespace GrouchySpouse
                     Console.WriteLine("If you want her to talk, you have to give me something to say!");
                 }
 
+                //var response = await _openAIClient.PostAsJsonAsync("chat/completions", new
+                //{
+                //    model = "deepseek-chat",
+                //    messages = history,
+                //    stream = false
+                //});
+
+
                 var response = await _openAIClient.PostAsJsonAsync("chat/completions", new
                 {
-                    model = "deepseek-chat",
+                    model = "llama-3.3-70b-versatile",
                     messages = history,
                     stream = false
                 });
