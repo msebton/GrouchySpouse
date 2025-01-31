@@ -122,8 +122,8 @@ namespace GrouchySpouse
                 await PlayAudioAsync(tempFile);
 #if DEBUG
                 Console.WriteLine("Deleting file \"{0}\"\n", tempFile);
-                File.Delete(tempFile);  // Clean up the temp file after playing
 #endif
+                File.Delete(tempFile);  // Clean up the temp file after playing
             }
         }
 
