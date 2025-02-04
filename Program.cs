@@ -1,15 +1,8 @@
-﻿﻿using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Threading.Tasks;
-using NAudio.Wave;
-using System.IO;
+﻿﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json.Serialization;
 using System.Runtime.InteropServices;
-using System.Diagnostics;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.UserSecrets;
 
 
 namespace GrouchySpouse
@@ -55,17 +48,13 @@ namespace GrouchySpouse
 
             // DeepSeek or other "Open" AI API
             //_openAIClient.BaseAddress = new Uri("https://api.deepseek.com/");
-
             _openAIClient.BaseAddress = new Uri("https://api.groq.com/openai/v1/");
-            //_openAIClient.DefaultRequestHeaders.Authorization = 
-            //    new AuthenticationHeaderValue("Bearer", "sk-XXX");
-
-            _openAIClient.DefaultRequestHeaders.Authorization = 
-                new AuthenticationHeaderValue("Bearer", openAiToken);
             
-            // Replicate API
-            _replicateClient.DefaultRequestHeaders.Authorization = 
-               new AuthenticationHeaderValue("Bearer", replicateToken);
+            // OpenAI API Header
+            _openAIClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", openAiToken);
+            
+            // Replicate API Header
+            _replicateClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", replicateToken);
         }
 
         /// <summary>
@@ -74,13 +63,14 @@ namespace GrouchySpouse
         /// <returns></returns>
         static async Task Chat()
         {
+            // This keeps the context for the LLM
             var history = new List<ChatMessage>();
             if (SYSTEM_PROMPT != null)
             {
                 history.Add(new ChatMessage { Role = "system", Content = SYSTEM_PROMPT });
             }
 
-            // This keeps the chat going and feeds back the history to maintain context.
+            // This keeps the chat going and feeds back the history to maintain context for the LLM.
             while (true)
             {
                 Console.Write("You: ");
@@ -128,28 +118,34 @@ namespace GrouchySpouse
         /// <returns></returns>
         static async Task SynthesizeAndPlayAudio(string text)
         {
-            var prediction = await CreatePrediction(text);
-            var outputUrl = await WaitForPredictionCompletion(prediction.Id);
-
-            if (String.IsNullOrEmpty(outputUrl))
+            try
             {
-                Console.WriteLine("No audio will be played.");
-                return;
+                var prediction = await CreatePrediction(text);
+                var outputUrl = await WaitForPredictionCompletion(prediction.Id);
+                
+                if (string.IsNullOrEmpty(outputUrl))
+                {
+                    Console.WriteLine("No audio will be played.");
+                    return;
+                }
+                else
+                {
+                    var tempFile = Path.GetTempFileName();
+
+                    #if DEBUG
+                    Console.WriteLine($"\nWriting audio file \"{outputUrl}\" to \"{tempFile}\"");  // Debug-only logging
+                    #endif
+                    await DownloadAudioFile(outputUrl, tempFile);
+                    await PlayAudioAsync(tempFile);
+                    #if DEBUG
+                        Console.WriteLine("Deleting audio file \"{0}\"\n", tempFile);  // Debug-only logging
+                    #endif
+                    File.Delete(tempFile);  // Clean up the temp file after playing
+                }
             }
-            else
+            catch (Exception ex)
             {
-                var tempFile = Path.GetTempFileName();
-
-
-#if DEBUG
-                Console.WriteLine($"\nWriting audio file \"{outputUrl}\" to \"{tempFile}\"");  // Debug-only logging
-#endif
-                await DownloadAudioFile(outputUrl, tempFile);
-                await PlayAudioAsync(tempFile);
-#if DEBUG
-                Console.WriteLine("Deleting audio file \"{0}\"\n", tempFile);
-#endif
-                File.Delete(tempFile);  // Clean up the temp file after playing
+                Console.WriteLine($"Error generating audio: {ex.Message}");
             }
         }
 
@@ -212,7 +208,7 @@ namespace GrouchySpouse
             catch (TaskCanceledException) when (cts.IsCancellationRequested)
             {
                 Console.WriteLine("API request timed out after {0} seconds", _apiTimeout);
-                return ""; // return empty to the caller so it knows no audio is to be played
+                return ""; // // return an empty string to the caller so it knows no audio is to be played
             }
             catch (HttpRequestException ex)
             {
@@ -297,6 +293,8 @@ namespace GrouchySpouse
 
     public class ReplicateCreateResponse
     {
+        [JsonPropertyName("id")]
+        [JsonRequired]
         public required string Id { get; set; }
     }
 
