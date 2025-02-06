@@ -10,7 +10,7 @@ namespace GrouchySpouse
         private static readonly HttpClient _openAIClient = new();
         private static string? SYSTEM_PROMPT;
         
-        private static string? openApiToken;
+        private static string? openAiToken;
         private static string? subscriptionKey;
         private static string? subscriptionRegion;
 
@@ -28,10 +28,10 @@ namespace GrouchySpouse
         {
             var config = new ConfigurationBuilder().AddUserSecrets<Program>().Build();
 
-            openApiToken = config["OpenApiToken"];
-            if (string.IsNullOrEmpty(openApiToken))
+            openAiToken = config["OpenAiToken"];
+            if (string.IsNullOrEmpty(openAiToken))
             {
-                throw new InvalidOperationException("OpenApi Token is not configured in user secrets.");
+                throw new InvalidOperationException("Open AI Token is not configured in user secrets.");
             }
 
             subscriptionKey = config["SpeechServiceSubscriptionKey"];
@@ -47,14 +47,10 @@ namespace GrouchySpouse
             }
 
             // DeepSeek or other "Open" AI API
-            //_openAIClient.BaseAddress = new Uri("https://api.deepseek.com/");
-
             _openAIClient.BaseAddress = new Uri("https://api.groq.com/openai/v1/");
-            //_openAIClient.DefaultRequestHeaders.Authorization = 
-            //    new AuthenticationHeaderValue("Bearer", "sk-XXX");
 
             _openAIClient.DefaultRequestHeaders.Authorization = 
-                new AuthenticationHeaderValue("Bearer", openApiToken);
+                new AuthenticationHeaderValue("Bearer", openAiToken);
         }
 
         /// <summary>
@@ -83,14 +79,6 @@ namespace GrouchySpouse
                     Console.WriteLine("If you want her to talk, you have to give me something to say!");
                 }
 
-                //var response = await _openAIClient.PostAsJsonAsync("chat/completions", new
-                //{
-                //    model = "deepseek-chat",
-                //    messages = history,
-                //    stream = false
-                //});
-
-
                 var response = await _openAIClient.PostAsJsonAsync("chat/completions", new
                 {
                     model = "llama-3.3-70b-versatile",
@@ -103,7 +91,7 @@ namespace GrouchySpouse
                 // check for a null completion...
                 var answer = completion?.Choices?[0]?.Message?.Content ?? "No response from the model...";
                 
-                Console.WriteLine(answer);
+                Console.WriteLine($"Spouse: {answer}");
                 history.Add(new ChatMessage { Role = "assistant", Content = answer });
                 
                 await SynthesizeAndPlayAudio(answer);
